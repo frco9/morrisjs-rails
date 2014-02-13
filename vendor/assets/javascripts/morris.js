@@ -168,6 +168,7 @@
       gridTextSize: 12,
       gridTextFamily: 'sans-serif',
       gridTextWeight: 'normal',
+      gridBgColor: '#e3e4e4',
       hideHover: false,
       yLabelFormat: null,
       xLabelAngle: 0,
@@ -178,6 +179,10 @@
       preUnits: '',
       ymax: 'auto',
       ymin: 'auto 0',
+      minLineColor: '#81d869',
+      maxLineColor: '#81d869',
+      minVal: false,
+      maxVal: false,
       goals: [],
       goalStrokeWidth: 1.0,
       goalLineColors: ['#666633', '#999966', '#cc6666', '#663333'],
@@ -535,6 +540,12 @@
       this._calc();
       this.drawGrid();
       this.drawGoals();
+      if (this.options.minVal) {
+        this.drawMin();
+      }
+      if (this.options.maxVal) {
+        this.drawMax();
+      }
       this.drawEvents();
       if (this.draw) {
         return this.draw();
@@ -610,6 +621,49 @@
       return _results;
     };
 
+    Grid.prototype.drawMin = function() {
+      var color, ymin, yvals;
+      color = this.options.minLineColor;
+      yvals = [];
+      this.data.map(function(el) {
+        return el.y.map(function(il) {
+          if (!isNaN(il)) {
+            return yvals.push(il);
+          }
+        });
+      });
+      if (yvals.length !== 0) {
+        ymin = Math.min.apply(Math, yvals);
+        return this.drawHLine(ymin, color);
+      }
+    };
+
+    Grid.prototype.drawMax = function() {
+      var color, ymax, yvals;
+      color = this.options.maxLineColor;
+      yvals = [];
+      this.data.map(function(el) {
+        return el.y.map(function(il) {
+          if (!isNaN(il)) {
+            return yvals.push(il);
+          }
+        });
+      });
+      if (yvals.length !== 0) {
+        ymax = Math.max.apply(Math, yvals);
+        return this.drawHLine(ymax, color);
+      }
+    };
+
+    Grid.prototype.drawHLine = function(y, color) {
+      var box, text;
+      this.drawGoal(y, color);
+      text = this.raphael.text(this.left - this.options.padding / 2, this.transY(y), y).attr('font-size', this.options.gridTextSize).attr('font-family', this.options.gridTextFamily).attr('font-weight', this.options.gridTextWeight).attr('fill', color).attr('text-anchor', 'end');
+      box = text.getBBox();
+      this.raphael.rect(box.x, box.y, box.width, box.height / 1.5).attr('fill', this.options.gridBgColor).attr('stroke-width', 0);
+      return text.toFront();
+    };
+
     Grid.prototype.drawGoal = function(goal, color) {
       return this.raphael.path("M" + this.left + "," + (this.transY(goal)) + "H" + this.right).attr('stroke', color).attr('stroke-width', this.options.goalStrokeWidth);
     };
@@ -618,8 +672,11 @@
       return this.raphael.path("M" + (this.transX(event)) + "," + this.bottom + "V" + this.top).attr('stroke', color).attr('stroke-width', this.options.eventStrokeWidth);
     };
 
-    Grid.prototype.drawYAxisLabel = function(xPos, yPos, text) {
-      return this.raphael.text(xPos, yPos, text).attr('font-size', this.options.gridTextSize).attr('font-family', this.options.gridTextFamily).attr('font-weight', this.options.gridTextWeight).attr('fill', this.options.gridTextColor).attr('text-anchor', 'end');
+    Grid.prototype.drawYAxisLabel = function(xPos, yPos, text, color) {
+      if (color == null) {
+        color = this.options.gridTextColor;
+      }
+      return this.raphael.text(xPos, yPos, text).attr('font-size', this.options.gridTextSize).attr('font-family', this.options.gridTextFamily).attr('font-weight', this.options.gridTextWeight).attr('fill', color).attr('text-anchor', 'end');
     };
 
     Grid.prototype.drawGridLine = function(path) {
